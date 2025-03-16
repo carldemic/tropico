@@ -9,6 +9,9 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_MODEL=${OPENAI_MODEL}
+      - DEFAULT_USER=${DEFAULT_USER}
+      - DEFAULT_HOSTNAME=${DEFAULT_HOSTNAME}
+      - USER_PASSWORD=${USER_PASSWORD}
     env_file:
       - .env
     command: ["python", "main.py", "--mode", "llm"]

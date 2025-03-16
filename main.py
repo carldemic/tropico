@@ -15,6 +15,9 @@ import paramiko
 from openai import OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+DEFAULT_USER = os.getenv("DEFAULT_USER", "admin")
+DEFAULT_HOSTNAME = os.getenv("DEFAULT_HOSTNAME", "virtual-machine")
+USER_PASSWORD = os.getenv("USER_PASSWORD", "password")
 
 # Setup logging
 logging.basicConfig()
@@ -39,7 +42,7 @@ class Server(paramiko.ServerInterface):
         return paramiko.OPEN_FAILED_ADMINISTRATIVELY_PROHIBITED
 
     def check_auth_password(self, username, password):
-        if password == '9999':
+        if username == DEFAULT_USER and password == USER_PASSWORD:
             return paramiko.AUTH_SUCCESSFUL
         return paramiko.AUTH_FAILED
 
@@ -134,13 +137,14 @@ def run_real_shell(channel, event, master_fd, slave_fd):
 
 
 def run_llm_shell(channel, event):
-    prompt = "admin@virtual-machine:~$ "
+    prompt = f"{DEFAULT_USER}@{DEFAULT_HOSTNAME}:~$ "
     channel.send(prompt)
 
+    # Initialize per-session message history
     message_history = [
         {
             "role": "system",
-            "content": "You will act as an Ubuntu Linux terminal. The user will type commands, and you are to reply with what the terminal should show. Your responses must be contained within a single code block. Do not provide notes. Do not provide explanations or type commands unless explicitly instructed by the user. Your entire response/output is going to consist of a simple text with \n for new line, and you will NOT wrap it within string md markers."
+            "content": f"You will act as an Ubuntu Linux terminal. The user will type commands, and you are to reply with what the terminal should show. Your responses must be contained within a single code block. Do not provide notes. Do not provide explanations or type commands unless explicitly instructed by the user. Your entire response/output is going to consist of a simple text with \n for new line, and you will NOT wrap it within string md markers. The default user should be {DEFAULT_USER} belonging to group {DEFAULT_USER}. The machine hostname is {DEFAULT_HOSTNAME}."
         }
     ]
 
@@ -149,36 +153,53 @@ def run_llm_shell(channel, event):
         data = channel.recv(1024)
         if not data:
             break
-        for char in data.decode():
-            if char == '\x7f':  # Backspace key (ASCII DEL)
-                # Remove last character from buffer
-                buffer = buffer[:-1]
-                # Move cursor back, erase character, move cursor back again
-                channel.send('\b \b')
+        i = 0
+        while i < len(data):
+            char = chr(data[i])
+
+            # Handle arrow keys (escape sequences)
+            if char == '\x1b':  # ESC
+                if i + 2 < len(data):
+                    seq = data[i:i+3].decode()
+                    if seq in ['\x1b[A', '\x1b[B', '\x1b[C', '\x1b[D']:
+                        i += 3  # Skip escape sequence
+                        continue
+                i += 1
+                continue
+
+            # Handle backspace
+            if char == '\x7f':
+                if buffer:
+                    buffer = buffer[:-1]
+                    channel.send('\b \b')
+                i += 1
+                continue
+
+            # Echo input normally
+            channel.send(char)
+
+            # Handle Enter
+            if char in ('\n', '\r'):
+                channel.send('\r\n')
+                command = buffer.strip()
+                if command in ('exit', 'quit'):
+                    event.set()
+                    return
+                if command:
+                    logger.info(f"LLM Mode: Received command: {command}")
+                    message_history.append({"role": "user", "content": command})
+
+                    response = get_llm_response(message_history).rstrip()
+
+                    message_history.append({"role": "assistant", "content": response})
+
+                    for line in response.splitlines():
+                        channel.send(line + '\r\n')
+                buffer = ''
+                channel.send(prompt)
             else:
-                channel.send(char)  # Echo input
-                if char in ('\n', '\r'):
-                    channel.send('\r\n')
-                    command = buffer.strip()
-                    if command in ('exit', 'quit'):
-                        event.set()
-                        return
-                    if command:
-                        logger.info(f"LLM Mode: Received command: {command}")
-                        message_history.append({"role": "user", "content": command})
-
-                        response = get_llm_response(message_history).rstrip()
-
-                        message_history.append({"role": "assistant", "content": response})
-
-                        for line in response.splitlines():
-                            channel.send(line + '\r\n')
-                    buffer = ''
-                    channel.send(prompt)
-                else:
-                    buffer += char
-
-
+                buffer += char
+            i += 1
 
 def get_llm_response(message_history):
     response = client.chat.completions.create(
@@ -186,8 +207,6 @@ def get_llm_response(message_history):
         messages=message_history
     )
     return response.choices[0].message.content
-
-
 
 def run_server(client, mode):
     t = paramiko.Transport(client)
