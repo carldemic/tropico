@@ -8,6 +8,7 @@ services:
       - "2222:22"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL}
     env_file:
       - .env
     command: ["python", "main.py", "--mode", "llm"]
