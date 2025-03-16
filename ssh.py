@@ -135,7 +135,6 @@ def run_real_shell(channel, event, master_fd, slave_fd):
         shell.terminate()
         event.set()
 
-
 def run_llm_shell(channel, event):
     prompt = f"{DEFAULT_USER}@{DEFAULT_HOSTNAME}:~$ "
     channel.send(prompt)
@@ -172,6 +171,20 @@ def run_llm_shell(channel, event):
                 if buffer:
                     buffer = buffer[:-1]
                     channel.send('\b \b')
+                i += 1
+                continue
+
+            # Handle Ctrl+D (EOF)
+            if char == '\x04':
+                channel.send('\r\nSession closed.\r\n')
+                event.set()
+                return
+
+            # Handle Ctrl+C
+            if char == '\x03':
+                buffer = ''
+                channel.send('^C\r\n')
+                channel.send(prompt)
                 i += 1
                 continue
 
