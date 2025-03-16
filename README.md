@@ -2,17 +2,20 @@
 
 **LLM Honeypot**
 
-**Paramiko-based custom SSH server running inside Docker, simulating a real login shell environment with user profiles, correct prompt behavior, and environment variables.**
+**Paramiko-based custom SSH server running inside Docker, simulating a real login shell environment in LLM mode or real mode.**
 
 ---
 
 ## 🚀 Features:
 
 - Python SSH server using **Paramiko**.
-- **Real Bash login shell behavior:**
+- **LLM-Backed Fake Terminal Mode (Default Mode):**
+  - Commands are passed to an OpenAI-compatible LLM API (e.g., GPT models).
+  - **Per-session memory:** Commands and their outputs are remembered during each SSH session (e.g., `mkdir` persists across `ls` commands).
+  - **Realistic prompt and environment.**
+- **Real Bash login shell mode:**
   - Loads `.bashrc`, `.bash_profile`, environment variables, aliases, virtualenv, etc.
 - SSH server listens on **port 22 inside Docker**, mapped to **port 2222 on host**.
-- Fixed container name: **`tropico-poc-container`** for predictable usage.
 - Default user credentials:
   - **Username:** `admin`
   - **Password:** `password`
@@ -21,20 +24,23 @@
 
 ## 🔑 Environment Variables
 
-- Create a `.env` file in the project root:
+Create a `.env` file in the project root:
+
 ```
+# OpenAI API key for LLM Mode
 OPENAI_API_KEY=sk-your-api-key
-```
-- You can switch to `gpt-4-turbo` or other supported models (default is gpt-3.5-turbo).
-```
+
+# Select model (e.g., gpt-3.5-turbo, gpt-4-turbo, etc.)
 OPENAI_MODEL=gpt-3.5-turbo
-```
-- Define the default user, hostname and login password:
-```
+
+# Default user & host info (affects prompt)
 DEFAULT_USER=admin
 DEFAULT_HOSTNAME=virtual-machine
 USER_PASSWORD=password
 ```
+
+---
+
 ## 🐳 Usage:
 
 ### 1. **Build and run Docker Compose image and service:**
@@ -43,14 +49,24 @@ USER_PASSWORD=password
 docker compose up --build -d
 ```
 
-or the included `run.sh` script.
+Or use the included `run.sh` script.
 
-### 2. **Build and run Docker Compose image and service:**
+---
+
+### 2. **SSH into the server:**
+
+```bash
+ssh admin@127.0.0.1 -p 2222
+```
+(Default password: `password`)
+
+---
+
+### 3. **Shut down the server:**
 
 ```bash
 docker compose down
 ```
-or the included `stop.sh` script.
 
-
+Or use the included `stop.sh` script.
 
