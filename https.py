@@ -43,7 +43,7 @@ def run_server():
 
     # Modern TLS context setup
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain(certfile='./localhost.pem', keyfile='./localhost-key.pem')
+    context.load_cert_chain(certfile='./cert.pem', keyfile='./key.pem')
 
     httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
 

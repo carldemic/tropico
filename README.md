@@ -70,3 +70,68 @@ docker compose down
 
 Or use the included `stop.sh` script.
 
+
+## 🌐 HTTPS Fake Server (LLM-powered)
+
+In addition to the SSH honeypot, this project includes a **fake HTTPS server powered by an LLM model**, designed to behave like a valid HTTPS server when accessed via browsers or curl clients.
+
+---
+
+### 🚀 Features:
+
+- **Valid HTTPS server behavior:**
+  - Uses a TLS certificate (self-signed by default) to perform proper TLS handshake.
+  - Listens on **port 443**.
+  - Responds with correct HTTP/1.1 headers.
+
+- **Dynamic LLM-based HTML content:**
+  - Each HTTP request triggers an OpenAI-compatible LLM to generate realistic HTML content.
+  - Simulates a real website serving valid HTML pages.
+
+- **Compatible with browsers and curl:**
+  - Appears like a real HTTPS server when accessed.
+  - No visible signs of being simulated.
+
+---
+
+### 🔑 Environment Variables:
+
+The HTTPS server uses the same `.env` configuration as the SSH service:
+
+```
+OPENAI_API_KEY=sk-your-api-key
+OPENAI_MODEL=gpt-3.5-turbo
+```
+
+---
+
+### 🐳 Usage:
+
+**Start both SSH and HTTPS services together:**
+
+```bash
+docker compose up --build -d
+```
+
+---
+
+### 🌐 Access:
+
+Visit:
+
+```
+https://localhost
+```
+
+Or:
+
+```bash
+curl -k https://localhost
+```
+
+---
+
+### 🛠 Certificates:
+
+- By default, the HTTPS server uses a **self-signed TLS certificate** (`cert.pem` & `key.pem`).
+- You can replace these files with your own certificates (e.g., using [mkcert](https://github.com/FiloSottile/mkcert)) to avoid browser trust warnings.
