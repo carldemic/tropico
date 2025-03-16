@@ -19,6 +19,17 @@
 
 ---
 
+## 🔑 Environment Variables
+
+- Create a `.env` file in the project root:
+```
+OPENAI_API_KEY=sk-your-api-key
+```
+- You can switch to `gpt-4-turbo` or other supported models (default is gpt-3.5-turbo).
+```
+OPENAI_MODEL=gpt-3.5-turbo
+```
+
 ## 🐳 Usage:
 
 ### 1. **Build and run Docker Compose image and service:**
