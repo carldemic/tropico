@@ -176,7 +176,7 @@ def run_llm_shell(channel, event):
 
             # Handle Ctrl+D (EOF)
             if char == '\x04':
-                channel.send('\r\nSession closed.\r\n')
+                channel.send('\r\nlogout\r\n')
                 event.set()
                 return
 
