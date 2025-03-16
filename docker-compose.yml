@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  tropico-poc:
+    image: tropico-poc
+    container_name: tropico-poc-container
+    build: .
+    ports:
+      - "2222:22"
+    restart: unless-stopped

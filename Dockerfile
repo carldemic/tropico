@@ -1,0 +1,25 @@
+FROM python:3.13-slim
+
+RUN apt-get update && \
+    apt-get install -y bash openssh-client sudo && \
+    useradd -ms /bin/bash admin && \
+    echo "admin:9999" | chpasswd && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Setup Bash profiles
+RUN echo "export PS1='\\u@\\h:\\w\\$ '" >> /home/admin/.bashrc
+RUN echo "source /home/admin/.bashrc" >> /home/admin/.bash_profile
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY main.py .
+COPY rsa ./rsa
+
+RUN chown -R admin:admin /app /home/admin
+
+EXPOSE 22
+
+CMD ["python", "main.py"]
