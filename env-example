@@ -1,0 +1,5 @@
+OPENAI_API_KEY=sk-proj-XXXXXX
+OPENAI_MODEL=gpt-3.5-turbo
+DEFAULT_USER=admin
+DEFAULT_HOSTNAME=virtual-machine
+USER_PASSWORD=password

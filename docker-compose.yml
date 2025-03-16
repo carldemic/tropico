@@ -2,9 +2,17 @@ version: '3.8'
 
 services:
   tropico-poc:
-    image: tropico-poc
-    container_name: tropico-poc-container
     build: .
+    container_name: tropico-poc-container
     ports:
       - "2222:22"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL}
+      - DEFAULT_USER=${DEFAULT_USER}
+      - DEFAULT_HOSTNAME=${DEFAULT_HOSTNAME}
+      - USER_PASSWORD=${USER_PASSWORD}
+    env_file:
+      - .env
+    command: ["python", "main.py", "--mode", "llm"]
     restart: unless-stopped
