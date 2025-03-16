@@ -12,14 +12,14 @@ RUN echo "source /home/admin/.bashrc" >> /home/admin/.bash_profile
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.ssh.txt .
+RUN pip install --no-cache-dir -r requirements.ssh.txt
 
-COPY main.py .
+COPY ssh.py .
 COPY rsa ./rsa
 
 RUN chown -R admin:admin /app /home/admin
 
 EXPOSE 22
 
-CMD ["python", "main.py"]
+CMD ["python", "ssh.py"]

@@ -1,7 +1,9 @@
 services:
-  tropico-poc:
-    build: .
-    container_name: tropico-poc-container
+  tropico-ssh:
+    build:
+      context: .
+      dockerfile: Dockerfile.ssh
+    container_name: tropico-ssh
     ports:
       - "2222:22"
     environment:
@@ -12,5 +14,15 @@ services:
       - USER_PASSWORD=${USER_PASSWORD}
     env_file:
       - .env
-    command: ["python", "main.py", "--mode", "llm"]
+    command: ["python", "ssh.py", "--mode", "llm"]
+    restart: unless-stopped
+  tropico-https:
+    build:
+      context: .
+      dockerfile: Dockerfile.https  # Your HTTPS Dockerfile
+    container_name: tropico-https
+    ports:
+      - "8443:443"
+    env_file:
+      - .env
     restart: unless-stopped

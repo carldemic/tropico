@@ -1,0 +1,16 @@
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.https.txt .
+RUN pip install --no-cache-dir -r requirements.https.txt
+
+# Copy server files
+COPY https.py .
+COPY localhost.pem .
+COPY localhost-key.pem .
+
+EXPOSE 443
+
+CMD ["python", "https.py"]
