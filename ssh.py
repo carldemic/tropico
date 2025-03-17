@@ -11,6 +11,7 @@ import struct
 import termios
 import argparse
 import paramiko
+import datetime
 
 from openai import OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -18,20 +19,27 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
 DEFAULT_USER = os.getenv("DEFAULT_USER", "admin")
 DEFAULT_HOSTNAME = os.getenv("DEFAULT_HOSTNAME", "virtual-machine")
 USER_PASSWORD = os.getenv("USER_PASSWORD", "password")
+LOG_FILE = os.getenv("LOG_FILE", "tropico-ssh.log")
 
 # Setup logging
-logging.basicConfig()
-paramiko.util.log_to_file('demo_server.log', level='INFO')
-logger = paramiko.util.get_logger("paramiko")
+# logging.basicConfig()
+# paramiko.util.log_to_file(LOG_FILE, level='INFO')
+# logger = paramiko.util.get_logger("paramiko")
+
+def log_ssh_event(event_type, ip, details=''):
+    with open(LOG_FILE, 'a') as log:
+        log.write(f"{datetime.datetime.now(datetime.UTC).isoformat()} | IP: {ip} | Event: {event_type}\n")
+        log.write(f"{details}\n")
+        log.write("-" * 60 + "\n")
 
 host_key = paramiko.RSAKey(filename='./rsa')
 
 SUPPORT_EXIT = True
 in_q = Queue()
 
-
 class Server(paramiko.ServerInterface):
-    def __init__(self, mode):
+    def __init__(self, mode, client_ip):
+        self.client_ip = client_ip
         self.event = threading.Event()
         self.master_fd = None
         self.mode = mode
@@ -42,6 +50,7 @@ class Server(paramiko.ServerInterface):
         return paramiko.OPEN_FAILED_ADMINISTRATIVELY_PROHIBITED
 
     def check_auth_password(self, username, password):
+        log_ssh_event("Authentication Attempt", self.client_ip, f"Username: {username}, Password: {password}")
         if username == DEFAULT_USER and password == USER_PASSWORD:
             return paramiko.AUTH_SUCCESSFUL
         return paramiko.AUTH_FAILED
@@ -50,13 +59,15 @@ class Server(paramiko.ServerInterface):
         return 'publickey,password'
 
     def check_channel_pty_request(self, channel, term, width, height, pixelwidth, pixelheight, modes):
-        logger.info(f"PTY request: {width}x{height}")
+        ip = channel.getpeername()[0]
+        log_ssh_event(f"PTY request: {width}x{height}", ip)
         self.pty_width = width
         self.pty_height = height
         return True
 
     def check_channel_window_change_request(self, channel, width, height, pixelwidth, pixelheight):
-        logger.info(f"Window size change: {width}x{height}")
+        ip = channel.getpeername()[0]
+        log_ssh_event(f"Window size change: {width}x{height}", ip)
         if self.master_fd:
             winsize = struct.pack('HHHH', height, width, 0, 0)
             fcntl.ioctl(self.master_fd, termios.TIOCSWINSZ, winsize)
@@ -73,7 +84,8 @@ class Server(paramiko.ServerInterface):
 
     def check_channel_exec_request(self, channel, command):
         command = command.decode()
-        logger.info('Exec Command = %s', command)
+        ip = channel.getpeername()[0]
+        log_ssh_event(f"Exec Command: {command}", ip)
         if self.mode == 'real':
             try:
                 result = subprocess.run(command, shell=True, capture_output=True, text=True)
@@ -90,6 +102,7 @@ class Server(paramiko.ServerInterface):
 
 
 def run_real_shell(channel, event, master_fd, slave_fd):
+    ip = channel.getpeername()[0]
     shell = subprocess.Popen(
         ['/bin/bash', '-l'],
         stdin=slave_fd,
@@ -100,7 +113,6 @@ def run_real_shell(channel, event, master_fd, slave_fd):
         env={"HOME": "/home/admin", "USER": "admin"}
     )
     os.close(slave_fd)
-
     # Flush initial output
     while True:
         rlist, _, _ = select.select([master_fd], [], [], 0.05)
@@ -136,6 +148,7 @@ def run_real_shell(channel, event, master_fd, slave_fd):
         event.set()
 
 def run_llm_shell(channel, event):
+    ip = channel.getpeername()[0]
     prompt = f"{DEFAULT_USER}@{DEFAULT_HOSTNAME}:~$ "
     channel.send(prompt)
 
@@ -177,6 +190,7 @@ def run_llm_shell(channel, event):
             # Handle Ctrl+D (EOF)
             if char == '\x04':
                 channel.send('\r\nlogout\r\n')
+                log_ssh_event("Logout Executed", ip)
                 event.set()
                 return
 
@@ -184,6 +198,7 @@ def run_llm_shell(channel, event):
             if char == '\x03':
                 buffer = ''
                 channel.send('^C\r\n')
+                log_ssh_event("Ctrl-C Executed (prompt)", ip)
                 channel.send(prompt)
                 i += 1
                 continue
@@ -195,17 +210,14 @@ def run_llm_shell(channel, event):
             if char in ('\n', '\r'):
                 channel.send('\r\n')
                 command = buffer.strip()
+                log_ssh_event("Command Executed", ip, f"Command: {command}")
                 if command in ('exit', 'quit'):
                     event.set()
                     return
                 if command:
-                    logger.info(f"LLM Mode: Received command: {command}")
                     message_history.append({"role": "user", "content": command})
-
                     response = get_llm_response(message_history).rstrip()
-
                     message_history.append({"role": "assistant", "content": response})
-
                     for line in response.splitlines():
                         channel.send(line + '\r\n')
                 buffer = ''
@@ -221,12 +233,12 @@ def get_llm_response(message_history):
     )
     return response.choices[0].message.content
 
-def run_server(client, mode):
+def run_server(client, mode, addr):
     t = paramiko.Transport(client)
     t.set_gss_host(socket.getfqdn(""))
     t.load_server_moduli()
     t.add_server_key(host_key)
-    server = Server(mode)
+    server = Server(mode, addr[0])
     t.start_server(server=server)
     server.event.wait()
     t.close()
@@ -235,11 +247,12 @@ def run_server(client, mode):
 def accept(sock, mode):
     while True:
         try:
-            client, _ = sock.accept()
+            client, addr = sock.accept()
+            log_ssh_event("New Connection", addr[0], "SSH connection accepted")
         except Exception as exc:
-            logger.error(exc)
+            log_ssh_event("Error", exc, '')
         else:
-            in_q.put((client, mode))
+            in_q.put((client, mode, addr))
 
 
 def listener(mode):
@@ -253,10 +266,10 @@ def listener(mode):
 
     while True:
         try:
-            client, mode = in_q.get()
+            client, mode, addr = in_q.get()
             if SUPPORT_EXIT and client is None:
                 break
-            threading.Thread(target=run_server, args=(client, mode), daemon=True).start()
+            threading.Thread(target=run_server, args=(client, mode, addr), daemon=True).start()
         except KeyboardInterrupt:
             sys.exit(0)
 
