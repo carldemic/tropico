@@ -134,4 +134,8 @@ curl -k https://localhost
 ### 🛠 Certificates:
 
 - By default, the HTTPS server uses a **self-signed TLS certificate** (`cert.pem` & `key.pem`).
-- You can replace these files with your own certificates (e.g., using [mkcert](https://github.com/FiloSottile/mkcert)) to avoid browser trust warnings.
+- You can generate self-signed certificates with this command:
+```bash
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"
+```
+- Alternatively, you can replace these files with your own certificates (e.g., using [mkcert](https://github.com/FiloSottile/mkcert) if on localhost; otherwise use CA generated certificates) to avoid browser trust warnings.

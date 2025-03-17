@@ -12,6 +12,9 @@ services:
       - DEFAULT_USER=${DEFAULT_USER}
       - DEFAULT_HOSTNAME=${DEFAULT_HOSTNAME}
       - USER_PASSWORD=${USER_PASSWORD}
+      - LOG_FILE=/logs/tropico-ssh.log
+    volumes:
+      - ./logs:/logs
     env_file:
       - .env
     command: ["python", "ssh.py", "--mode", "llm"]
@@ -23,6 +26,14 @@ services:
     container_name: tropico-https
     ports:
       - "8443:443"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL}
+      - LOG_FILE=/logs/tropico-https.log
+      - TLS_CERT_FILE=${TLS_CERT_FILE}
+      - TLS_CERT_KEY=${TLS_CERT_KEY}
+    volumes:
+      - ./logs:/logs
     env_file:
       - .env
     restart: unless-stopped

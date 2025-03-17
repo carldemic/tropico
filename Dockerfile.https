@@ -8,8 +8,8 @@ RUN pip install --no-cache-dir -r requirements.https.txt
 
 # Copy server files
 COPY https.py .
-COPY cert.pem .
-COPY key.pem .
+# Copy any certificate
+COPY certs/*.pem .
 
 EXPOSE 443
 
