@@ -81,7 +81,7 @@ class HoneypotHandler(http.server.BaseHTTPRequestHandler):
 
 def run():
     server_address = ('', 443)
-    httpd = http.server.HTTPServer(server_address, HoneypotHandler)
+    httpd = http.server.HTTPServer(server_address, HoneypotHandler)  # type: ignore
 
     # SSL setup
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
