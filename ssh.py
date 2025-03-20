@@ -10,7 +10,6 @@ import struct
 import termios
 import argparse
 import paramiko
-import datetime
 from openai import OpenAI
 from lib.logger import log_event
 from collections import defaultdict

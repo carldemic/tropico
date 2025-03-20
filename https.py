@@ -1,13 +1,10 @@
 import http.server
 import ssl
 import os
-import sys
-import datetime
 from openai import OpenAI
 from lib.logger import log_event
 from collections import defaultdict
 
-# Load environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
 TLS_CERT_FILE = os.getenv("TLS_CERT_FILE", "certs/cert.pem")
@@ -17,11 +14,9 @@ MAX_REQUESTS_PER_IP = int(os.getenv("MAX_REQUESTS_PER_IP", 50))
 request_counts = defaultdict(int)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-# Logging function
 def log_request(ip, method, path, headers, body, tls_version):
     log_event("https", method, ip, {"path": path, "headers": headers, "body": body, "tls_version": tls_version})
 
-# Custom request handler
 class HoneypotHandler(http.server.BaseHTTPRequestHandler):
     server_version = os.getenv("SERVER_VERSION", "Apache/2.2.15 (CentOS)")
     sys_version = ""
@@ -135,7 +130,6 @@ Always reply only with valid, realistic raw HTML content, without code formattin
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length) if content_length else b''
 
-        # Log request
         ip = self.client_address[0]
         headers = dict(self.headers)
         log_request(ip, "POST", self.path, headers, post_data.decode(), self.request_version)
