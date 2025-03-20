@@ -148,3 +148,12 @@ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -node
 ```
 
 - Alternatively, you can replace these files with your own certificates (e.g., using [mkcert](https://github.com/FiloSottile/mkcert) if on localhost; otherwise use CA generated certificates) to avoid browser trust warnings.
+
+
+### Throttling
+
+- By setting `MAX_REQUESTS_PER_IP` you can limit the number of requests per IP. After that limit, the client will receive a `404` error in HTTPS and a `Command not found` in SSH.
+
+### Logging
+
+- Logs are saved by default in the `logs` directory, one per service. They are automatically capped to `LOG_MAX_SIZE_MB` size (in MB) and GZip rotated up to a maximum of `LOG_BACKUP_COUNT` archived files.
