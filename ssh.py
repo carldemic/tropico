@@ -13,12 +13,16 @@ import paramiko
 import datetime
 from openai import OpenAI
 from lib.logger import log_event
+from collections import defaultdict
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
 DEFAULT_USER = os.getenv("DEFAULT_USER", "admin")
 DEFAULT_HOSTNAME = os.getenv("DEFAULT_HOSTNAME", "virtual-machine")
 USER_PASSWORD = os.getenv("USER_PASSWORD", "password")
+MAX_REQUESTS_PER_IP = int(os.getenv("MAX_REQUESTS_PER_IP", 50))
+
+request_counts = defaultdict(int)
 
 def log_ssh_event(event_type, ip, details=''):
     log_event("ssh", event_type, ip, details)
@@ -197,6 +201,10 @@ def run_llm_shell(channel, event):
 
             # Handle Enter
             if char in ('\n', '\r'):
+                throttled = request_counts[ip] >= MAX_REQUESTS_PER_IP
+                if not throttled:
+                    request_counts[ip] += 1
+
                 channel.send('\r\n')
                 command = buffer.strip()
                 log_ssh_event("Command Executed", ip, f"Command: {command}")
@@ -204,9 +212,12 @@ def run_llm_shell(channel, event):
                     event.set()
                     return
                 if command:
-                    message_history.append({"role": "user", "content": command})
-                    response = get_llm_response(message_history).rstrip()
-                    message_history.append({"role": "assistant", "content": response})
+                    if throttled:
+                        response = f"bash: {command}: command not found"
+                    else:
+                        message_history.append({"role": "user", "content": command})
+                        response = get_llm_response(message_history).rstrip()
+                        message_history.append({"role": "assistant", "content": response})
                     for line in response.splitlines():
                         channel.send(line + '\r\n')
                 buffer = ''

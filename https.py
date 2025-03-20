@@ -5,13 +5,16 @@ import sys
 import datetime
 from openai import OpenAI
 from lib.logger import log_event
+from collections import defaultdict
 
 # Load environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
 TLS_CERT_FILE = os.getenv("TLS_CERT_FILE", "certs/cert.pem")
 TLS_CERT_KEY = os.getenv("TLS_CERT_KEY", "certs/key.pem")
+MAX_REQUESTS_PER_IP = int(os.getenv("MAX_REQUESTS_PER_IP", 50))
 
+request_counts = defaultdict(int)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Logging function
@@ -65,14 +68,20 @@ Always reply only with valid, realistic raw HTML content, without code formattin
 
 """
 
-#     SYSTEM_PROMPT = """
-# You are a vulnerable-looking HTTPS server. Respond with realistic HTML pages, login panels, or admin pages, depending on requested path. Do not explain.
-#   """
-#     SYSTEM_PROMPT = """
-#     "You are a vulnerable-looking HTTPS server. Respond to any GET or POST requests with realistic error messages or login responses. Do NOT explain. Do NOT tell that you are a vulnerable-looking server. Be extremely realistic in responses. Remove any Markdown tag or syntax before serving the HTML output."
-#     """
+    def is_throttled(self):
+        ip = self.client_address[0]
+        request_counts[ip] += 1
+        if request_counts[ip] > MAX_REQUESTS_PER_IP:
+            log_event("HTTPS", "Throttled", ip, {"path": self.path})
+            return True
+        return False
 
     def do_GET(self):
+        if self.is_throttled():
+            self.send_response(404)
+            self.end_headers()
+            self.wfile.write(b"404 Not Found\n")
+            return
         # Log request
         ip = self.client_address[0]
         headers = dict(self.headers)
@@ -103,6 +112,12 @@ Always reply only with valid, realistic raw HTML content, without code formattin
         self.wfile.write(html_content.encode())
 
     def do_POST(self):
+        if self.is_throttled():
+            self.send_response(404)
+            self.end_headers()
+            self.wfile.write(b"404 Not Found\n")
+            return
+
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length) if content_length else b''
 
