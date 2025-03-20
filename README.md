@@ -1,6 +1,6 @@
 # 🌴 tropico
 
-**LLM Honeypot**
+**LLM-Powered Adversary Engagement**
 
 **Paramiko-based custom SSH server running inside Docker, simulating a real login shell environment in LLM mode or real mode.**
 
@@ -83,7 +83,7 @@ Or use the included `stop.sh` script.
 
 ## 🌐 HTTPS Fake Server (LLM-powered)
 
-In addition to the SSH honeypot, this project includes a **fake HTTPS server powered by an LLM model**, designed to behave like a valid HTTPS server when accessed via browsers or curl clients.
+In addition to the SSH adversary engagement, this project includes a **fake HTTPS server powered by an LLM model**, designed to behave like a valid HTTPS server when accessed via browsers or curl clients.
 
 ---
 
