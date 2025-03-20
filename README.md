@@ -58,7 +58,9 @@ Or use the included `run.sh` script.
 ```bash
 ssh admin@127.0.0.1 -p 2222
 ```
-(Default password: `password`)
+Default password: `password`.
+
+Port is set by default on 2222, you can change it in `docker-compose.yml`.
 
 ---
 
@@ -117,16 +119,16 @@ docker compose up --build -d
 
 ### 🌐 Access:
 
-Visit:
+Visit the following URL (port is set by default on 8443, you can change it in `docker-compose.yml`):
 
 ```
-https://localhost
+https://localhost:8443
 ```
 
 Or:
 
 ```bash
-curl -k https://localhost
+curl -k https://localhost:8443
 ```
 
 ---
