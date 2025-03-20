@@ -1,8 +1,10 @@
 import http.server
 import ssl
 import os
+import sys
 import datetime
 from openai import OpenAI
+from lib.logger import log_event
 
 # Load environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -15,13 +17,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Logging function
 def log_request(ip, method, path, headers, body, tls_version):
-    with open(LOG_FILE, 'a') as log:
-        log.write(f"{datetime.datetime.now(datetime.UTC).isoformat()} | IP: {ip} | TLS: {tls_version}\n")
-        log.write(f"Method: {method} Path: {path}\n")
-        log.write(f"Headers: {headers}\n")
-        if body:
-            log.write(f"Body: {body}\n")
-        log.write("-" * 60 + "\n")
+    log_event("https", method, ip, {"path": path, "headers": headers, "body": body, "tls_version": tls_version})
 
 # Custom request handler
 class HoneypotHandler(http.server.BaseHTTPRequestHandler):

@@ -11,8 +11,9 @@ import termios
 import argparse
 import paramiko
 import datetime
-
 from openai import OpenAI
+from lib.logger import log_event
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
 DEFAULT_USER = os.getenv("DEFAULT_USER", "admin")
@@ -21,10 +22,7 @@ USER_PASSWORD = os.getenv("USER_PASSWORD", "password")
 LOG_FILE = os.getenv("LOG_FILE", "tropico-ssh.log")
 
 def log_ssh_event(event_type, ip, details=''):
-    with open(LOG_FILE, 'a') as log:
-        log.write(f"{datetime.datetime.now(datetime.UTC).isoformat()} | IP: {ip} | Event: {event_type}\n")
-        log.write(f"{details}\n")
-        log.write("-" * 60 + "\n")
+    log_event("ssh", event_type, ip, details)
 
 host_key = paramiko.RSAKey(filename='./rsa')
 
