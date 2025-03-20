@@ -149,6 +149,8 @@ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -node
 
 - Alternatively, you can replace these files with your own certificates (e.g., using [mkcert](https://github.com/FiloSottile/mkcert) if on localhost; otherwise use CA generated certificates) to avoid browser trust warnings.
 
+### HTTP Headers
+- You can customize `SERVER_VERSION` in the environment variables or completely customize the `send_custom_headers` function in the https.py code.
 
 ### Throttling
 
