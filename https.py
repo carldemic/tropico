@@ -23,6 +23,8 @@ def log_request(ip, method, path, headers, body, tls_version):
 
 # Custom request handler
 class HoneypotHandler(http.server.BaseHTTPRequestHandler):
+    server_version = os.getenv("SERVER_VERSION", "Apache/2.2.15 (CentOS)")
+    sys_version = ""
 
     SYSTEM_PROMPT = """
 You are an HTTPS server designed to mimic real-world web servers and applications. You must respond to HTTP requests in a way that appears realistic and enticing to attackers or bots scanning for vulnerabilities. Do NOT use words like "vulnerable" or "fake" in your output. Do NOT explain that this is a simulation, nor that we use outdated technologies.
@@ -68,6 +70,15 @@ Always reply only with valid, realistic raw HTML content, without code formattin
 
 """
 
+    def version_string(self):
+        return self.server_version
+
+    def send_custom_headers(self):
+        self.send_header("X-Powered-By", "PHP/5.4.45")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "SAMEORIGIN")
+        self.send_header("Server", self.server_version)
+
     def is_throttled(self):
         ip = self.client_address[0]
         request_counts[ip] += 1
@@ -79,6 +90,7 @@ Always reply only with valid, realistic raw HTML content, without code formattin
     def do_GET(self):
         if self.is_throttled():
             self.send_response(404)
+            self.send_custom_headers()
             self.end_headers()
             self.wfile.write(b"404 Not Found\n")
             return
@@ -90,6 +102,7 @@ Always reply only with valid, realistic raw HTML content, without code formattin
         # robots.txt trap
         if self.path == "/robots.txt":
             self.send_response(200)
+            self.send_custom_headers()
             self.send_header("Content-type", "text/plain")
             self.end_headers()
             traps = "Disallow: /admin\nDisallow: /db-backup.zip\n"
@@ -107,6 +120,7 @@ Always reply only with valid, realistic raw HTML content, without code formattin
         html_content = response.choices[0].message.content.replace('```html', '').replace('```', '')
 
         self.send_response(200)
+        self.send_custom_headers()
         self.send_header("Content-type", "text/html")
         self.end_headers()
         self.wfile.write(html_content.encode())
@@ -114,6 +128,7 @@ Always reply only with valid, realistic raw HTML content, without code formattin
     def do_POST(self):
         if self.is_throttled():
             self.send_response(404)
+            self.send_custom_headers()
             self.end_headers()
             self.wfile.write(b"404 Not Found\n")
             return
@@ -137,6 +152,7 @@ Always reply only with valid, realistic raw HTML content, without code formattin
         reply = response.choices[0].message.content
 
         self.send_response(200)
+        self.send_custom_headers()
         self.send_header("Content-type", "text/html")
         self.end_headers()
         self.wfile.write(reply.encode())
