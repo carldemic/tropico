@@ -139,6 +139,7 @@ TLS_CERT_FILE=certs/cert.pem
 TLS_CERT_KEY=certs/key.pem
 ```
 
+
 - You can generate self-signed certificates with this command:
 ```bash
 openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"
