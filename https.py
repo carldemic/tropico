@@ -15,7 +15,11 @@ request_counts = defaultdict(int)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 def log_request(ip, method, path, headers, body, tls_version):
-    log_event("https", method, ip, {"path": path, "headers": headers, "body": body, "tls_version": tls_version})
+    log_event("https", method, ip, {"event": "request", "path": path, "headers": headers, "body": body, "tls_version": tls_version})
+
+def log_response(ip, method, path, body):
+    log_event("https", method, ip, {"event": "response", "path": path, "body": body})
+
 
 class HoneypotHandler(http.server.BaseHTTPRequestHandler):
     server_version = os.getenv("SERVER_VERSION", "Apache/2.2.15 (CentOS)")
@@ -82,16 +86,18 @@ Always reply only with valid, realistic raw HTML content, without code formattin
         return False
 
     def do_GET(self):
+        # Log request
+        ip = self.client_address[0]
+        headers = dict(self.headers)
+        log_request(ip, "GET", self.path, headers, None, self.request_version)
+
         if self.is_throttled():
             self.send_response(404)
             self.send_custom_headers()
             self.end_headers()
             self.wfile.write(b"404 Not Found\n")
+            log_response(ip, "GET", self.path, "404 Not Found")
             return
-        # Log request
-        ip = self.client_address[0]
-        headers = dict(self.headers)
-        log_request(ip, "GET", self.path, headers, None, self.request_version)
 
         # robots.txt trap
         if self.path == "/robots.txt":
@@ -101,6 +107,7 @@ Always reply only with valid, realistic raw HTML content, without code formattin
             self.end_headers()
             traps = "Disallow: /admin\nDisallow: /db-backup.zip\n"
             self.wfile.write(traps.encode())
+            log_response(ip, "GET", self.path, traps)
             return
 
         # Generate fake page
@@ -118,21 +125,23 @@ Always reply only with valid, realistic raw HTML content, without code formattin
         self.send_header("Content-type", "text/html")
         self.end_headers()
         self.wfile.write(html_content.encode())
+        log_response(ip, "GET", self.path, html_content)
 
     def do_POST(self):
-        if self.is_throttled():
-            self.send_response(404)
-            self.send_custom_headers()
-            self.end_headers()
-            self.wfile.write(b"404 Not Found\n")
-            return
-
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length) if content_length else b''
 
         ip = self.client_address[0]
         headers = dict(self.headers)
         log_request(ip, "POST", self.path, headers, post_data.decode(), self.request_version)
+
+        if self.is_throttled():
+            self.send_response(404)
+            self.send_custom_headers()
+            self.end_headers()
+            self.wfile.write(b"404 Not Found\n")
+            log_response(ip, "POST", self.path, "404 Not Found")
+            return
 
         # Fake login page handler
         response = client.chat.completions.create(
@@ -149,6 +158,7 @@ Always reply only with valid, realistic raw HTML content, without code formattin
         self.send_header("Content-type", "text/html")
         self.end_headers()
         self.wfile.write(reply.encode())
+        log_response(ip, "GET", self.path, reply)
 
 def run():
     server_address = ('', 443)
