@@ -77,7 +77,6 @@ Always reply only with valid, realistic raw HTML content, without code formattin
         self.send_header("X-Powered-By", "PHP/5.4.45")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "SAMEORIGIN")
-        self.send_header("Server", self.server_version)
 
     def is_throttled(self):
         ip = self.client_address[0]
