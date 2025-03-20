@@ -3,3 +3,5 @@ OPENAI_MODEL=gpt-3.5-turbo
 DEFAULT_USER=admin
 DEFAULT_HOSTNAME=virtual-machine
 USER_PASSWORD=password
+TLS_CERT_FILE=certs/cert.pem
+TLS_CERT_KEY=certs/key.pem

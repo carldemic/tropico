@@ -133,9 +133,15 @@ curl -k https://localhost
 
 ### 🛠 Certificates:
 
-- By default, the HTTPS server uses a **self-signed TLS certificate** (`cert.pem` & `key.pem`).
+- By default, the HTTPS server uses a **self-signed TLS certificate** (`certs/cert.pem` & `certs/key.pem`). Using a self-signed certificate won't work most of the time though. You can change the certificate names in the environment variables, but they should stay in the `certs` path.
+```bash
+TLS_CERT_FILE=certs/cert.pem
+TLS_CERT_KEY=certs/key.pem
+```
+
 - You can generate self-signed certificates with this command:
 ```bash
 openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"
 ```
+
 - Alternatively, you can replace these files with your own certificates (e.g., using [mkcert](https://github.com/FiloSottile/mkcert) if on localhost; otherwise use CA generated certificates) to avoid browser trust warnings.
