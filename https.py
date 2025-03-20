@@ -9,9 +9,8 @@ from lib.logger import log_event
 # Load environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
-LOG_FILE = os.getenv("LOG_FILE", "honeypot-https.log")
-TLS_CERT_FILE = os.getenv("TLS_CERT_FILE", "cert.pem")
-TLS_CERT_KEY = os.getenv("TLS_CERT_KEY", "key.pem")
+TLS_CERT_FILE = os.getenv("TLS_CERT_FILE", "certs/cert.pem")
+TLS_CERT_KEY = os.getenv("TLS_CERT_KEY", "certs/key.pem")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 

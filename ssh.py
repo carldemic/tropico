@@ -19,7 +19,6 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
 DEFAULT_USER = os.getenv("DEFAULT_USER", "admin")
 DEFAULT_HOSTNAME = os.getenv("DEFAULT_HOSTNAME", "virtual-machine")
 USER_PASSWORD = os.getenv("USER_PASSWORD", "password")
-LOG_FILE = os.getenv("LOG_FILE", "tropico-ssh.log")
 
 def log_ssh_event(event_type, ip, details=''):
     log_event("ssh", event_type, ip, details)

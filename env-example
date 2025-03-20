@@ -5,3 +5,6 @@ DEFAULT_HOSTNAME=virtual-machine
 USER_PASSWORD=password
 TLS_CERT_FILE=certs/cert.pem
 TLS_CERT_KEY=certs/key.pem
+LOG_DIR=/logs
+LOG_MAX_SIZE_MB=1024
+LOG_BACKUP_COUNT=5
