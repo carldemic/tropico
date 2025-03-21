@@ -2,7 +2,7 @@
 
 **LLM-Powered Adversary Engagement**
 
-**Paramiko-based custom SSH server running inside Docker, simulating a real login shell environment in LLM mode or real mode.**
+**HTTPs server and Paramiko-based custom SSH server running inside Docker, emulating a real website and login shell environment via LLMs.**
 
 ---
 
