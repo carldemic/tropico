@@ -2,7 +2,14 @@
 
 **LLM-Powered Adversary Engagement**
 
-**HTTPs server and Paramiko-based custom SSH server running inside Docker, emulating a real website and login shell environment via LLMs.**
+This repo is a proof-of-concept adversary engagement tool that uses LLMs to simulate realistic SSH and HTTPS services. It provides a convincing interactive environment for attackers while logging their actions for analysis. It is meant to be deployed via Docker within a VLAN and trigger alerts when attackers reach it and interact with it. 
+
+Features:
+- SSH Emulation: A Paramiko-based SSH server that mimics a real login shell, with LLM-generated command responses and per-session memory.
+- HTTPS Deception: A fake HTTPS server that dynamically generates responses using an LLM, appearing as a fully functional website.
+- Logging: Captures interactions and responses and maintains session logs with rotation.
+- Attacker Profiling: coming soon!
+- TLS Support: Includes customizable SSL certificates for HTTPS.
 
 ---
 
