@@ -10,6 +10,7 @@ Features:
 - Logging: Captures interactions and responses and maintains session logs with rotation.
 - Attacker Profiling: coming soon!
 - TLS Support: Includes customizable SSL certificates for HTTPS.
+- Configuration: Customizable log and per-IP request limits.
 
 ---
 
